@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Nudge – Task Alarm</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f2f4ef;--sf:#fff;--tx:#14211f;--mu:#6b7a76;--ac:#0f6b5c;--acs:#d8efe8;--hi:#e8a21a;--ln:#e0e5df;--ok:#1f9d6b;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d1719;--sf:#15262a;--tx:#eaf2ee;--mu:#8ca29d;--ac:#6fdcc0;--acs:#1c3d3a;--hi:#f2b84b;--ln:#223a3d;--ok:#6fdcc0}}
+:root[data-theme="dark"]{--bg:#0d1719;--sf:#15262a;--tx:#eaf2ee;--mu:#8ca29d;--ac:#6fdcc0;--acs:#1c3d3a;--hi:#f2b84b;--ln:#223a3d;--ok:#6fdcc0}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--tx);font-family:Inter,system-ui,sans-serif}
+body{max-width:520px;margin:0 auto;padding:20px 18px 110px}
+h1,h2,.big{font-family:'Bricolage Grotesque',system-ui,sans-serif;margin:0}
+.top{display:flex;justify-content:space-between;align-items:center;gap:14px;margin-bottom:22px}
+.top h1{font-size:30px;font-weight:800;letter-spacing:-.02em;line-height:1.05}
+.top p{margin:6px 0 0;color:var(--mu);font-size:14px}
+.ring{position:relative;width:78px;height:78px;flex:none}
+.ring svg{transform:rotate(-90deg)}
+.ring b{position:absolute;inset:0;display:grid;place-items:center;font:700 17px 'Bricolage Grotesque'}
+.sect{font:700 13px Inter;color:var(--mu);margin:22px 2px 10px}
+.card{background:var(--sf);border:1px solid var(--ln);border-radius:20px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:14px}
+.card.off{opacity:.5}
+.card.done .t{text-decoration:line-through;color:var(--mu)}
+.time{font:800 30px/1 'Bricolage Grotesque';letter-spacing:-.02em;min-width:92px}
+.time small{font:600 12px Inter;color:var(--mu);margin-left:3px}
+.mid{flex:1;min-width:0}
+.t{font-weight:600;font-size:16px;overflow-wrap:anywhere}
+.rep{color:var(--mu);font-size:13px;margin-top:3px}
+.sw{appearance:none;width:46px;height:28px;border-radius:99px;background:var(--ln);position:relative;border:0;flex:none;cursor:pointer;transition:.2s}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:.2s}
+.sw[aria-checked=true]{background:var(--ac)}.sw[aria-checked=true]::after{left:21px}
+.x{border:0;background:none;color:var(--mu);font-size:20px;padding:4px 2px;cursor:pointer}
+.empty{border:1.5px dashed var(--ln);border-radius:20px;padding:26px 20px;text-align:center;color:var(--mu);line-height:1.5}
+.fab{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(22px + env(safe-area-inset-bottom,0px));background:var(--ac);color:var(--bg);border:0;border-radius:99px;padding:16px 28px;font:700 16px 'Bricolage Grotesque';box-shadow:0 8px 24px rgba(0,0,0,.25);cursor:pointer}
+:root:not([data-theme="dark"]) .fab{color:#fff}
+.sheet{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:flex-end;justify-content:center;z-index:5}
+.sheet.on{display:flex}
+.pane{background:var(--bg);width:100%;max-width:520px;border-radius:28px 28px 0 0;padding:22px 18px calc(22px + env(safe-area-inset-bottom,0px));max-height:92%;overflow:auto}
+.pane h2{font-size:22px;margin-bottom:14px}
+label{display:block;font:600 13px Inter;color:var(--mu);margin:14px 2px 6px}
+input[type=text],input[type=time]{width:100%;font:500 17px Inter;padding:14px;border-radius:14px;border:1px solid var(--ln);background:var(--sf);color:var(--tx)}
+input[type=time]{font:800 28px 'Bricolage Grotesque'}
+input:focus-visible,button:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid var(--ln);background:var(--sf);color:var(--tx);border-radius:99px;padding:9px 13px;font:600 14px Inter;cursor:pointer}
+.chip.on{background:var(--ac);border-color:var(--ac);color:var(--bg)}
+:root:not([data-theme="dark"]) .chip.on{color:#fff}
+.days .chip{width:42px;height:42px;padding:0;border-radius:50%}
+.row{display:flex;gap:10px;margin-top:20px}
+.btn{flex:1;border:0;border-radius:16px;padding:15px;font:700 16px 'Bricolage Grotesque';cursor:pointer;background:var(--ac);color:var(--bg)}
+:root:not([data-theme="dark"]) .btn{color:#fff}
+.btn.g{background:var(--acs);color:var(--tx)!important}
+.hint{color:var(--mu);font-size:13px;line-height:1.5;margin:18px 2px 0}
+.hint a{color:var(--ac);font-weight:600;cursor:pointer}
+.alarm{position:fixed;inset:0;z-index:9;background:var(--bg);display:none;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:30px;gap:14px}
+.alarm.on{display:flex}
+.alarm .pulse{width:96px;height:96px;border-radius:50%;background:var(--hi);display:grid;place-items:center;font-size:44px;animation:p 1.2s infinite}
+@keyframes p{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--hi) 60%,transparent)}100%{box-shadow:0 0 0 40px transparent}}
+@media(prefers-reduced-motion:reduce){.alarm .pulse{animation:none}}
+.alarm p{color:var(--mu);margin:0;font-size:16px}
+.alarm .big{font-size:40px;font-weight:800;line-height:1.1;letter-spacing:-.02em;overflow-wrap:anywhere}
+.alarm .row{width:100%;max-width:360px;flex-direction:column}
+.toast{position:fixed;top:calc(14px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);background:var(--tx);color:var(--bg);padding:10px 16px;border-radius:99px;font-size:14px;font-weight:600;z-index:20;display:none;max-width:90%}
+.tabs{display:flex;gap:6px;margin-bottom:12px}.tabs .chip{flex:1;padding:11px 6px;text-align:center}.tabs .gear{flex:none;width:46px;padding:11px 0}
+#panel{background:var(--sf);border:1px solid var(--ln);border-radius:20px;padding:6px 16px;margin-bottom:6px}
+.tk{display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--ln)}.tk:last-child{border:0}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--ln);flex:none}.dot.ok{background:var(--ok)}.dot.late{background:var(--hi)}
+.tn{flex:1;font-weight:600;overflow-wrap:anywhere}.tk.done .tn{text-decoration:line-through;color:var(--mu)}.tm2,.st{font-size:13px;color:var(--mu);white-space:nowrap}
+.wd{padding:12px 0;border-bottom:1px solid var(--ln)}.wd:last-child{border:0}.wd h3{font:800 16px 'Bricolage Grotesque';margin:0 0 4px}.wd.now h3{color:var(--ac)}.wd .tk{padding:5px 0;border:0}
+.rp{display:flex;align-items:center;gap:16px;padding:14px 0}.rp .big{font-size:52px;font-weight:800;line-height:1}
+.bars{display:flex;gap:8px;padding:6px 0}.bc{flex:1;text-align:center;font-size:12px;color:var(--mu)}.bar{height:80px;background:var(--acs);border-radius:8px;display:flex;align-items:flex-end;overflow:hidden;margin-bottom:4px}.bar i{display:block;width:100%;background:var(--ok)}
+.ins{font-size:14px;line-height:1.6;padding:6px 0 12px;color:var(--mu)}.ins b{color:var(--tx)}
+.wk{display:flex;gap:5px;padding:12px 0 6px}.wk .chip{flex:1;padding:10px 0;font-size:13px;text-align:center;border-radius:12px;position:relative}.wk .chip.td::after{content:"";position:absolute;bottom:3px;left:50%;margin-left:-2px;width:4px;height:4px;border-radius:50%;background:var(--hi)}.wh{font:800 18px 'Bricolage Grotesque';margin:10px 0 2px}
+</style></head><body>
+<div class="toast" id="toast"></div>
+<div class="top">
+  <div><h1 id="hi">Good day</h1><p id="sub"></p></div>
+  <div class="ring"><svg width="78" height="78" viewBox="0 0 78 78"><circle cx="39" cy="39" r="33" fill="none" stroke="var(--ln)" stroke-width="8"/><circle id="arc" cx="39" cy="39" r="33" fill="none" stroke="var(--ok)" stroke-width="8" stroke-linecap="round" stroke-dasharray="207.3" stroke-dashoffset="207.3" style="transition:.5s"/></svg><b id="rt">0/0</b></div>
+</div>
+<div class="tabs" id="tabs"><button class="chip" data-tab="today">Today</button><button class="chip" data-tab="week">This week</button><button class="chip" data-tab="report">Report</button><button class="chip gear" id="gear" aria-label="Ring tone settings">♪</button></div>
+<div id="panel"></div>
+<div id="list"></div>
+<p class="hint">Keep this page open with your screen on and volume up. Your phone will say each task out loud, then ask 5 minutes later if you finished it. <a id="test">Test the voice</a></p>
+<button class="fab" id="add">+ New task alarm</button>
+
+<div class="sheet" id="sheet"><div class="pane">
+  <h2>New task alarm</h2>
+  <label for="ti">What should I say?</label>
+  <input type="text" id="ti" placeholder="Send the weekly report" maxlength="80" autocomplete="off">
+  <label for="tm">Time</label>
+  <input type="time" id="tm" value="09:00">
+  <label>Repeat</label>
+  <div class="chips" id="pre">
+    <button class="chip" data-p="once">Just once</button><button class="chip" data-p="daily">Every day</button><button class="chip" data-p="wk">Weekdays</button><button class="chip" data-p="we">Weekends</button>
+  </div>
+  <div class="chips days" id="days" style="margin-top:10px"></div>
+  <p class="hint" id="rh" style="margin-top:10px"></p>
+  <div class="row"><button class="btn g" id="cancel">Cancel</button><button class="btn" id="save">Save alarm</button></div>
+</div></div>
+
+<div class="sheet" id="ssheet"><div class="pane">
+  <h2>Ring tone</h2>
+  <div class="chips" id="tones"></div>
+  <input type="file" id="up" accept="audio/*" hidden>
+  <div class="row"><button class="btn g" id="upb">Upload my sound</button><button class="btn g" id="prev">Play</button></div>
+  <p class="hint">Your own sound plays for 4 seconds, then I say the task. Use a clip under 1.5 MB.</p>
+  <div class="row"><button class="btn" id="sdone">Done</button></div>
+</div></div>
+<div class="alarm" id="al">
+  <div class="pulse" id="ai">⏰</div>
+  <p id="ap">Time for</p>
+  <div class="big" id="at"></div>
+  <p id="as"></p>
+  <div class="row" id="ab"></div>
+</div>
+
+<script>
+const D=['S','M','T','W','T','F','S'],DN=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const $=id=>document.getElementById(id);
+let tasks=[],done={},checks=[],sel=new Set(),ring=null,cur=null,ac=null,rec=null;
+const dk=(d=new Date())=>d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();
+const ld=(k,f)=>{try{return JSON.parse(localStorage.getItem(k))||f}catch(e){return f}};
+const sv=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
+tasks=ld('na_tasks',[]);done=ld('na_done',{});checks=ld('na_checks',[]);
+const save=()=>{sv('na_tasks',tasks);sv('na_done',done);sv('na_checks',checks);syncNative()};
+const fmt=t=>{let[h,m]=t.split(':').map(Number);return{a:((h+11)%12+1)+':'+String(m).padStart(2,'0'),p:h<12?'AM':'PM'}};
+const repText=d=>!d.length?'Once':d.length==7?'Every day':(d.join()=='1,2,3,4,5')?'Weekdays':(d.join()=='0,6')?'Weekends':d.length==1?'Every '+DN[d[0]]:d.map(x=>DN[x]).join(', ');
+const toast=m=>{const t=$('toast');t.textContent=m;t.style.display='block';clearTimeout(t._t);t._t=setTimeout(()=>t.style.display='none',2600)};
+
+function speak(txt){try{const s=speechSynthesis;s.cancel();const u=new SpeechSynthesisUtterance(txt);u.rate=.95;u.volume=1;s.speak(u)}catch(e){}}
+function beep(n=3){try{ac=ac||new(window.AudioContext||window.webkitAudioContext)();if(ac.state=='suspended')ac.resume();for(let i=0;i<n;i++){const o=ac.createOscillator(),g=ac.createGain();o.type='sine';o.frequency.value=i%2?880:660;o.connect(g);g.connect(ac.destination);const t=ac.currentTime+i*.28;g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.4,t+.03);g.gain.exponentialRampToValueAtTime(.0001,t+.24);o.start(t);o.stop(t+.26)}}catch(e){}}
+function unlock(){try{ac=ac||new(window.AudioContext||window.webkitAudioContext)();ac.resume()}catch(e){}}
+document.addEventListener('click',unlock,{once:true});
+
+function render(){
+  const now=new Date(),dow=now.getDay(),td=dk();
+  const h=now.getHours();$('hi').textContent=h<5?'Still up?':h<12?'Good morning':h<17?'Good afternoon':'Good evening';
+  const today=tasks.filter(t=>t.on&&(!t.days.length||t.days.includes(dow)));
+  const dn=today.filter(t=>(done[td]||[]).includes(t.id)).length;
+  $('sub').textContent=today.length?(dn==today.length?'All done for today.':(today.length-dn)+' to go today'):'Nothing scheduled today';
+  $('rt').textContent=dn+'/'+today.length;
+  $('arc').style.strokeDashoffset=207.3*(1-(today.length?dn/today.length:0));
+  const L=$('list');renderPanel();
+  if(!tasks.length){L.innerHTML='<div class="empty">No alarms yet.<br>Add a task and a time. I will say it out loud when it\u2019s due.</div>';return}
+  const sorted=[...tasks].sort((a,b)=>a.time.localeCompare(b.time));
+  L.innerHTML='<div class="sect">Your alarms</div>'+sorted.map(t=>{const f=fmt(t.time),dd=(done[td]||[]).includes(t.id);
+    return `<div class="card ${t.on?'':'off'} ${dd?'done':''}"><div class="time">${f.a}<small>${f.p}</small></div><div class="mid"><div class="t">${esc(t.title)}</div><div class="rep">${dd?'Done today \u2713 \u00b7 ':''}${repText(t.days)}</div></div><button class="sw" role="switch" aria-label="Turn alarm on or off" aria-checked="${t.on}" data-s="${t.id}"></button><button class="x" aria-label="Delete alarm" data-x="${t.id}">\u00d7</button></div>`}).join('');
+}
+const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+$('list').addEventListener('click',e=>{
+  const s=e.target.closest('[data-s]'),x=e.target.closest('[data-x]');
+  if(s){const t=tasks.find(t=>t.id==s.dataset.s);t.on=!t.on;save();render()}
+  if(x){tasks=tasks.filter(t=>t.id!=x.dataset.x);checks=checks.filter(c=>c.id!=x.dataset.x);save();render()}
+});
+
+// sheet
+$('days').innerHTML=D.map((d,i)=>`<button class="chip" data-d="${i}" aria-label="${DN[i]}">${d}</button>`).join('');
+function paint(){document.querySelectorAll('#days .chip').forEach(c=>c.classList.toggle('on',sel.has(+c.dataset.d)));
+  const a=[...sel].sort(),p=!a.length?'once':a.length==7?'daily':a.join()=='1,2,3,4,5'?'wk':a.join()=='0,6'?'we':'';
+  document.querySelectorAll('#pre .chip').forEach(c=>c.classList.toggle('on',c.dataset.p==p));
+  $('rh').textContent=a.length?'Repeats: '+repText(a):'Rings once, at the next '+($('tm').value||'chosen time')+'.'}
+$('days').onclick=e=>{const c=e.target.closest('[data-d]');if(!c)return;const d=+c.dataset.d;sel.has(d)?sel.delete(d):sel.add(d);paint()};
+$('pre').onclick=e=>{const c=e.target.closest('[data-p]');if(!c)return;sel=new Set({once:[],daily:[0,1,2,3,4,5,6],wk:[1,2,3,4,5],we:[0,6]}[c.dataset.p]);paint()};
+$('tm').oninput=paint;
+$('add').onclick=()=>{unlock();$('ti').value='';sel=new Set();paint();$('sheet').classList.add('on');setTimeout(()=>$('ti').focus(),50)};
+$('cancel').onclick=()=>$('sheet').classList.remove('on');
+$('save').onclick=()=>{
+  const title=$('ti').value.trim();if(!title){toast('Type what I should say');$('ti').focus();return}
+  if(!$('tm').value){toast('Pick a time');return}
+  tasks.push({id:Date.now()+'',title,time:$('tm').value,days:[...sel].sort(),on:true,last:'',created:Date.now()});
+  save();render();$('sheet').classList.remove('on');toast('Alarm set for '+fmt($('tm').value).a+' '+fmt($('tm').value).p);
+};
+$('test').onclick=()=>{unlock();toast('Test alarm rings in 5 seconds');setTimeout(()=>fire({id:'test',title:'Drink a glass of water',test:1}),5000)};
+
+// alarm flow
+function show(o){
+  $('ai').textContent=o.icon;$('ap').textContent=o.pre;$('at').textContent=o.title;$('as').textContent=o.sub||'';
+  $('ab').innerHTML=o.btns.map((b,i)=>`<button class="btn ${b.g?'g':''}" data-b="${i}">${b.l}</button>`).join('');
+  $('ab').onclick=e=>{const b=e.target.closest('[data-b]');if(b)o.btns[+b.dataset.b].f()};
+  $('al').classList.add('on');
+}
+function stop(){try{aud&&aud.pause()}catch(e){}clearInterval(ring);ring=null;try{speechSynthesis.cancel()}catch(e){}try{rec&&rec.abort()}catch(e){};$('al').classList.remove('on');cur=null}
+function fire(t){
+  if(cur)return;cur=t;
+  const say=()=>{const d=playTone();setTimeout(()=>speak('Time for your task. '+t.title+'.'),d)};
+  say();let n=0;ring=setInterval(()=>{if(++n>=6){ack();return}say()},9000);
+  try{if(navigator.vibrate)navigator.vibrate([400,200,400])}catch(e){}
+  show({icon:'\u23f0',pre:'Time for',title:t.title,sub:'I will check back in 5 minutes.',btns:[{l:'Got it, starting now',f:ack},{l:'Snooze 5 min',g:1,f:snooze}]});
+}
+function ack(){const t=cur;stop();if(!t)return;
+  if(t.test){toast('I would ask again in 5 minutes. Check-in in 10 s for the test.');checks.push({id:'test',title:t.title,due:Date.now()+10000,test:1})}
+  else checks.push({id:t.id,title:t.title,due:Date.now()+5*60000});
+  save();toast('Okay. I will check in 5 minutes.')}
+function ask(c){
+  if(cur)return;cur=c;
+  const q='Did you finish '+c.title+'? Say yes or no.';
+  const d=playTone();setTimeout(()=>{speak(q);setTimeout(listen,3800)},d);
+  show({icon:'\u2705',pre:'Check-in',title:'Did you finish: '+c.title+'?',sub:'You can also say \u201cyes\u201d or \u201cno\u201d.',btns:[{l:'Yes, it\u2019s done',f:()=>yes(c)},{l:'Not yet, ask in 5 min',g:1,f:()=>no(c)}]});
+}
+function yes(c){stop();if(!c.test){const k=dk();(done[k]=done[k]||[]).includes(c.id)||done[k].push(c.id);const t=tasks.find(x=>x.id==c.id);if(t&&!t.days.length)t.on=false}save();render();speak('Great job.');toast('Nice work. Marked as done.')}
+function no(c){stop();if(!c.test)checks.push({id:c.id,title:c.title,due:Date.now()+5*60000});save();speak('Okay, I will ask again in 5 minutes.');toast('Asking again in 5 minutes')}
+function listen(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR||!cur)return;
+  try{rec=new SR();rec.lang='en-US';rec.onresult=e=>{const s=e.results[0][0].transcript.toLowerCase();const c=cur;if(!c)return;if(/\b(yes|yeah|yep|done|finished|did)\b/.test(s))yes(c);else if(/\b(no|nope|not|later)\b/.test(s))no(c)};rec.start()}catch(e){}
+}
+function tick(){
+  const now=new Date(),hm=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0'),td=dk();
+  for(const t of tasks){if(t.on&&t.time==hm&&t.last!=td&&(!t.days.length||t.days.includes(now.getDay()))){t.last=td;save();fire(t);return}}
+  const i=checks.findIndex(c=>c.due<=Date.now());
+  if(i>-1&&!cur){const c=checks.splice(i,1)[0];save();c.kind=='alarm'?fire({id:c.id,title:c.title,test:c.test}):ask(c)}
+}
+function snooze(){const t=cur;stop();if(!t)return;checks.push({id:t.id,title:t.title,due:Date.now()+(t.test?10000:300000),kind:'alarm',test:t.test});save();toast(t.test?'Snoozed for 10 s (test)':'Snoozed for 5 minutes')}
+// tones
+const TONES={chime:[[784,0,.3,'sine'],[988,.25,.3,'sine'],[1175,.5,.7,'sine']],bell:[[880,0,1,'triangle'],[1320,.02,.8,'triangle'],[880,.7,1,'triangle']],digital:[[1000,0,.12,'square'],[1000,.2,.12,'square'],[1000,.4,.12,'square'],[1000,.6,.12,'square']],gentle:[[392,0,.5,'sine'],[494,.4,.5,'sine'],[587,.8,.5,'sine'],[784,1.2,.9,'sine']]};
+let tone=ld('na_tone','chime'),custom=ld('na_custom',''),aud=null;
+function playTone(){
+ if(tone=='custom'&&custom){try{aud&&aud.pause();aud=new Audio(custom);aud.play().catch(()=>{});const a=aud;setTimeout(()=>a.pause(),4000)}catch(e){}return 4300}
+ try{unlock();let end=0;(TONES[tone]||TONES.chime).forEach(([f,s,d,ty])=>{const o=ac.createOscillator(),g=ac.createGain();o.type=ty;o.frequency.value=f;o.connect(g);g.connect(ac.destination);const t=ac.currentTime+s;g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.35,t+.02);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.start(t);o.stop(t+d+.05);end=Math.max(end,s+d)});return end*1000+500}catch(e){return 900}
+}
+function paintTones(){const n={chime:'Chime',bell:'Bell',digital:'Digital',gentle:'Gentle'};if(custom)n.custom='My sound';$('tones').innerHTML=Object.keys(n).map(k=>`<button class="chip ${tone==k?'on':''}" data-t="${k}">${n[k]}</button>`).join('')}
+$('gear').onclick=()=>{unlock();paintTones();$('ssheet').classList.add('on')};
+$('sdone').onclick=()=>$('ssheet').classList.remove('on');
+$('tones').onclick=e=>{const c=e.target.closest('[data-t]');if(!c)return;tone=c.dataset.t;sv('na_tone',tone);paintTones();playTone()};
+$('prev').onclick=playTone;$('upb').onclick=()=>$('up').click();
+$('up').onchange=e=>{const f=e.target.files[0];if(!f)return;if(f.size>1.5e6){toast('File too big. Use a clip under 1.5 MB');return}const r=new FileReader();r.onload=()=>{custom=r.result;tone='custom';try{localStorage.setItem('na_custom',JSON.stringify(custom));sv('na_tone',tone)}catch(x){toast('Saved for this session only')}paintTones();playTone()};r.readAsDataURL(f)};
+// today / week / report
+let tab='today',wsel=null;
+const byT=(a,b)=>a.time.localeCompare(b.time);
+const row=(t,st,dn)=>{const f=fmt(t.time);return `<div class="tk ${dn?'done':''}"><span class="dot ${dn?'ok':st=='late'?'late':''}"></span><span class="tn">${esc(t.title)}</span><span class="tm2">${f.a} ${f.p}</span></div>`};
+function plan(d){const k=dk(d),w=d.getDay(),end=new Date(d).setHours(23,59,59,999);return tasks.filter(t=>t.on&&(t.created||0)<=end&&(t.days.includes(w)||(!t.days.length&&(t.last==k||(t.created&&dk(new Date(t.created))==k)))))}
+function renderPanel(){
+ document.querySelectorAll('#tabs [data-tab]').forEach(b=>b.classList.toggle('on',b.dataset.tab==tab));
+ const now=new Date(),td=dk(),dow=now.getDay(),dn=done[td]||[],P=$('panel'),hm=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+ if(tab=='today'){const L=tasks.filter(t=>t.on&&(!t.days.length||t.days.includes(dow))).sort(byT);
+  P.innerHTML=L.length?L.map(t=>row(t,t.time<hm?'late':'',dn.includes(t.id))).join(''):'<div class="empty" style="border:0">No tasks today. Tap New task alarm to add one.</div>'}
+ else if(tab=='week'){const sd=wsel==null?dow:wsel,d=new Date(now);d.setDate(now.getDate()-dow+sd);const ids=done[dk(d)]||[],L=tasks.filter(t=>t.on&&(t.days.includes(sd)||(!t.days.length&&sd==dow))).sort(byT),nd=L.filter(t=>ids.includes(t.id)).length;
+  P.innerHTML=`<div class="chips wk">${DN.map((n,i)=>`<button class="chip ${i==sd?'on':''} ${i==dow?'td':''}" data-w="${i}">${n}</button>`).join('')}</div><div class="wh">${d.toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'short'})}${sd==dow?' (today)':''}</div><div class="rep" style="margin:0 0 6px">${L.length?(sd<=dow?nd+' of '+L.length+' done':L.length+(L.length>1?' tasks':' task')+' planned'):''}</div>${L.length?L.map(t=>row(t,sd<dow||(sd==dow&&t.time<hm)?'late':'',ids.includes(t.id))).join(''):'<div class="empty" style="border:0;padding:18px 0">Free day. Nothing scheduled.</div>'}`}
+ else{let tp=0,td2=0,best=null,miss={};const rows=[];
+  for(let i=6;i>=0;i--){const d=new Date(now);d.setDate(now.getDate()-i);const L=plan(d),ids=done[dk(d)]||[],c=L.filter(t=>ids.includes(t.id)).length;
+   L.filter(t=>!ids.includes(t.id)&&(i>0||t.time<hm)).forEach(t=>miss[t.title]=(miss[t.title]||0)+1);
+   tp+=L.length;td2+=c;const r={n:DN[d.getDay()],p:L.length?Math.round(c/L.length*100):0,l:L.length};rows.push(r);if(r.l&&(!best||r.p>best.p))best=r}
+  const pc=tp?Math.round(td2/tp*100):0,mm=Object.entries(miss).sort((a,b)=>b[1]-a[1])[0];
+  P.innerHTML=tp?`<div class="rp"><div class="big">${pc}%</div><div>of your tasks done<br><span class="rep">${td2} of ${tp} in the last 7 days</span></div></div><div class="bars">${rows.map(r=>`<div class="bc"><div class="bar"><i style="height:${r.p}%"></i></div>${r.n}</div>`).join('')}</div><div class="ins">Best day: <b>${best?best.n:'none yet'}</b><br>Most missed: <b>${mm?esc(mm[0])+' ('+mm[1]+'x)':'nothing, great work'}</b><br>${pc>=80?'Strong week. Keep it going.':pc>=50?'Decent week. Try snoozing less on your top missed task.':'Tough week. Try fewer tasks at better times.'}</div>`:'<div class="empty" style="border:0">No data yet. Your report fills in as you complete tasks.</div>'}
+}
+$('panel').onclick=e=>{const b=e.target.closest('[data-w]');if(b){wsel=+b.dataset.w;renderPanel()}};
+$('tabs').onclick=e=>{const b=e.target.closest('[data-tab]');if(b){tab=b.dataset.tab;renderPanel()}};
+setInterval(tick,1000);setInterval(render,30000);
+
+// ---- native (Capacitor) background alarms ----
+const LN=(window.Capacitor&&Capacitor.Plugins&&Capacitor.Plugins.LocalNotifications)||null;
+function hid(s){let h=7;for(const ch of s)h=(h*31+ch.charCodeAt(0))%2147483000;return h+1}
+let syncing=false,again=false;
+async function syncNative(){
+ if(!LN)return; if(syncing){again=true;return} syncing=true;
+ try{
+  const old=ld('na_nids',[]);if(old.length)await LN.cancel({notifications:old.map(id=>({id}))});
+  const list=[],now=new Date();
+  for(const t of tasks){if(!t.on)continue;const[h,m]=t.time.split(':').map(Number);
+   if(t.days.length){for(const d of t.days)list.push({id:hid(t.id+'d'+d),title:'Time for your task',body:t.title,channelId:'alarms',allowWhileIdle:true,extra:{id:t.id,kind:'alarm'},schedule:{on:{weekday:d+1,hour:h,minute:m},allowWhileIdle:true}})}
+   else if(!t.last){const d=new Date();d.setHours(h,m,0,0);if(d<=now)d.setDate(d.getDate()+1);list.push({id:hid(t.id+'o'),title:'Time for your task',body:t.title,channelId:'alarms',allowWhileIdle:true,extra:{id:t.id,kind:'alarm'},schedule:{at:d,allowWhileIdle:true}})}}
+  for(const c of checks){if(c.due>Date.now())list.push({id:hid('c'+c.id+c.due),title:c.kind=='alarm'?'Snooze is over':'Check-in',body:c.kind=='alarm'?c.title:'Did you finish: '+c.title+'?',channelId:'alarms',allowWhileIdle:true,extra:{id:c.id,kind:c.kind=='alarm'?'alarm':'check'},schedule:{at:new Date(c.due),allowWhileIdle:true}})}
+  if(list.length)await LN.schedule({notifications:list});
+  sv('na_nids',list.map(n=>n.id));
+ }catch(e){}
+ syncing=false;if(again){again=false;syncNative()}
+}
+async function initNative(){
+ if(!LN)return;
+ try{await LN.requestPermissions()}catch(e){}
+ try{await LN.createChannel({id:'alarms',name:'Task alarms',importance:5,visibility:1,vibration:true})}catch(e){}
+ try{const s=await LN.checkExactNotificationSetting();if(s.exact_alarm!=='granted')await LN.changeExactNotificationSetting()}catch(e){}
+ LN.addListener('localNotificationActionPerformed',a=>{
+  const x=a.notification.extra||{},t=tasks.find(t=>t.id==x.id);if(!t||cur)return;
+  checks=checks.filter(c=>!(c.id==t.id&&c.due<=Date.now()+2000));
+  if(x.kind=='check')ask({id:t.id,title:t.title});else{t.last=dk();fire(t)}save();
+ });
+ syncNative();
+}
+initNative();
+render();
+</script></body></html>
